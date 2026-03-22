@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Little Reminder ❤️</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #ffe4e1; /* Soft Rose */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            color: #5d4037;
+        }
+
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            border: 4px solid #ffb7c5;
+            cursor: none;
+        }
+
+        #player {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            font-size: 40px;
+            transform: translateX(-50%);
+            transition: 0.1s;
+            user-select: none;
+        }
+
+        .item {
+            position: absolute;
+            font-size: 30px;
+            user-select: none;
+        }
+
+        #ui {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        #message-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            z-index: 10;
+        }
+
+        button {
+            background: #ffb7c5;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background: #ff8da1;
+        }
+
+        h1 { margin: 0; font-size: 24px; color: #d81b60; }
+        p { line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h2 id="score-display">Self-Care Points: 0</h2>
+    </div>
+
+    <div id="game-container">
+        <div id="player">💖</div>
+        
+        <div id="message-overlay">
+            <h1 id="title">Hi HIPOOOO.</h1>
+            <p id="body-text">You've been working so hard lately. I want you to take a 1-minute break. Catch the things that make you feel better, avoid the stress clouds!</p>
+            <button onclick="startGame()">Start Relaxing</button>
+        </div>
+    </div>
+
+    <p style="margin-top: 20px; font-style: italic;">Move your mouse or finger to catch.</p>
+
+    <script>
+        const container = document.getElementById('game-container');
+        const player = document.getElementById('player');
+        const scoreDisplay = document.getElementById('score-display');
+        const overlay = document.getElementById('message-overlay');
+        const title = document.getElementById('title');
+        const bodyText = document.getElementById('body-text');
+
+        let score = 0;
+        let gameActive = false;
+        let items = [];
+        const goodItems = ['☁️', '🍵', '🛌', '🍫', '✨', '🌸']; // Relaxing icons
+        const badItems = ['📧', '⏰', '📉', '💼']; // Stress icons
+
+        // Movement
+        container.addEventListener('mousemove', (e) => {
+            if (!gameActive) return;
+            let rect = container.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            // Keep player within bounds
+            if (x > 20 && x < 380) {
+                player.style.left = x + 'px';
+            }
+        });
+
+        // Touch support
+        container.addEventListener('touchmove', (e) => {
+            if (!gameActive) return;
+            let rect = container.getBoundingClientRect();
+            let x = e.touches[0].clientX - rect.left;
+            if (x > 20 && x < 380) {
+                player.style.left = x + 'px';
+            }
+            e.preventDefault();
+        }, {passive: false});
+
+        function startGame() {
+            score = 0;
+            gameActive = true;
+            overlay.style.display = 'none';
+            scoreDisplay.innerText = "Self-Care Points: 0";
+            spawnItem();
+        }
+
+        function spawnItem() {
+            if (!gameActive) return;
+
+            const item = document.createElement('div');
+            const isGood = Math.random() > 0.3;
+            item.className = 'item';
+            item.innerText = isGood ? goodItems[Math.floor(Math.random() * goodItems.length)] : badItems[Math.floor(Math.random() * badItems.length)];
+            item.style.left = Math.random() * (400 - 40) + 20 + 'px';
+            item.style.top = '-50px';
+            container.appendChild(item);
+
+            let fallSpeed = 2 + Math.random() * 3;
+            let fallInterval = setInterval(() => {
+                let currentTop = parseInt(item.style.top);
+                item.style.top = currentTop + fallSpeed + 'px';
+
+                // Collision detection
+                let playerRect = player.getBoundingClientRect();
+                let itemRect = item.getBoundingClientRect();
+
+                if (itemRect.bottom >= playerRect.top && 
+                    itemRect.left < playerRect.right && 
+                    itemRect.right > playerRect.left) {
+                    
+                    if (isGood) {
+                        score += 10;
+                    } else {
+                        score -= 5;
+                    }
+                    scoreDisplay.innerText = "Self-Care Points: " + score;
+                    clearInterval(fallInterval);
+                    item.remove();
+                }
+
+                if (currentTop > 500) {
+                    clearInterval(fallInterval);
+                    item.remove();
+                }
+                
+                if (score >= 100) {
+                    endGame();
+                }
+            }, 20);
+
+            if (gameActive) {
+                setTimeout(spawnItem, 800);
+            }
+        }
+
+        function endGame() {
+            gameActive = false;
+            overlay.style.display = 'flex';
+            title.innerText = "I've Got You. ❤️";
+            bodyText.innerHTML = `
+                <strong>Score: ${score}</strong><br><br>
+                You're doing amazing, but please don't forget to breathe(and yes youll probably say im breathing but you get the point).<br><br>
+                I'm not going anywhere. I'll always be right here to catch you when you're tired and you can always talk to me about anything.
+                I care about you more than all these points combined.ALso ALso youre really cool and i miss you a lot<br><br>
+                <strong>NOW PLEASEEE GET SOME RESTTT </strong>
+            `;
+            document.querySelector('button').innerText = "Play Again";
+        }
+    </script>
+</body>
+</html>
